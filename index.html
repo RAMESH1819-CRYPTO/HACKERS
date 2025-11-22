@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HACKERS!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a2e0a;
+            color: #2CFF05;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        #world-map {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(10, 80, 10, 0.9);
+            border: 2px solid #2CFF05;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 25px rgba(44, 255, 5, 0.6);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #2CFF05;
+            text-shadow: 0 0 20px #2CFF05;
+        }
+
+        .login-container, .chat-container, .admin-panel {
+            background: rgba(10, 80, 10, 0.95);
+            border: 2px solid #2CFF05;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 35px rgba(44, 255, 5, 0.7);
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 50px auto;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2CFF05;
+            text-shadow: 0 0 20px #2CFF05;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #0a3d0a;
+            border: 1px solid #2CFF05;
+            color: #2CFF05;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(44, 255, 5, 0.6);
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #2CFF05;
+            color: #000;
+            box-shadow: 0 0 20px #2CFF05;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .user-info {
+            padding: 10px;
+            background: rgba(0, 40, 0, 0.8);
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: rgba(0, 10, 0, 0.8);
+            border: 1px solid #0f0;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 8px 0;
+            background: rgba(10, 60, 10, 0.7);
+            border-left: 3px solid #2CFF05;
+            border-radius: 3px;
+            word-wrap: break-word;
+        }
+
+        .message.admin {
+            border-left-color: #ff0;
+            background: rgba(40, 40, 0, 0.6);
+        }
+
+        .message-user {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .message-text {
+            margin-left: 10px;
+        }
+
+        .message-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input input {
+            flex: 1;
+        }
+
+        .message-input button {
+            width: auto;
+            padding: 12px 30px;
+        }
+
+        .admin-panel {
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .pending-user {
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(40, 0, 0, 0.6);
+            border: 1px solid #f00;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .member-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(10, 80, 10, 0.7);
+            border: 1px solid #2CFF05;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pending-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .pending-actions button {
+            width: auto;
+            padding: 8px 20px;
+        }
+
+        .approve-btn {
+            background: #003300;
+        }
+
+        .reject-btn {
+            background: #330000;
+        }
+
+        .remove-btn {
+            background: #660000;
+            width: auto;
+            padding: 8px 20px;
+        }
+
+        .remove-btn:hover {
+            background: #ff0000;
+            color: #000;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .error {
+            color: #f00;
+            text-align: center;
+            margin: 10px 0;
+            text-shadow: 0 0 5px #f00;
+        }
+
+        .success {
+            color: #0ff;
+            text-align: center;
+            margin: 10px 0;
+            text-shadow: 0 0 5px #0ff;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #001a00;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2CFF05;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-bg"></canvas>
+    <canvas id="world-map"></canvas>
+    
+    <div class="container">
+        <div class="header">
+            <h1> WELCOME TO DARK PLUS </h1>
+        </div>
+
+        <!-- Login Page -->
+        <div id="login-page" class="login-container">
+            <h2>► ACCESS TERMINAL ◄</h2>
+            <input type="text" id="username" placeholder="Enter Username">
+            <input type="password" id="password" placeholder="Enter Password">
+            <button onclick="login()">LOGIN</button>
+            <div id="login-message"></div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-section" class="hidden">
+            <div class="admin-panel">
+                <h2>⚠ ADMIN: PENDING VERIFICATIONS ⚠</h2>
+                <div id="pending-users"></div>
+            </div>
+            <div class="admin-panel" style="margin-top: 20px;">
+                <h2>👥 MANAGE MEMBERS 👥</h2>
+                <div id="active-members"></div>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div id="chat-section" class="chat-container hidden">
+            <div class="user-info">
+                <span>User: <strong id="current-user"></strong></span>
+                <button onclick="logout()" style="width: auto; padding: 8px 20px;">LOGOUT</button>
+            </div>
+            
+            <div class="messages" id="messages"></div>
+            
+            <div class="message-input">
+                <input type="text" id="message-input" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()">SEND</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix background animation
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const binary = '01';
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(10, 46, 10, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#2CFF05';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = binary[Math.floor(Math.random() * binary.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 80);
+
+        // World Map Background Animation
+        const mapCanvas = document.getElementById('world-map');
+        const mapCtx = mapCanvas.getContext('2d');
+        
+        mapCanvas.width = window.innerWidth;
+        mapCanvas.height = window.innerHeight;
+
+        const locations = [
+            { name: 'New York', x: 0.25, y: 0.35 },
+            { name: 'London', x: 0.48, y: 0.32 },
+            { name: 'Tokyo', x: 0.82, y: 0.38 },
+            { name: 'Sydney', x: 0.85, y: 0.75 },
+            { name: 'Moscow', x: 0.58, y: 0.28 },
+            { name: 'Mumbai', x: 0.68, y: 0.48 },
+            { name: 'Cairo', x: 0.53, y: 0.45 },
+            { name: 'São Paulo', x: 0.32, y: 0.68 },
+            { name: 'Los Angeles', x: 0.18, y: 0.38 },
+            { name: 'Beijing', x: 0.78, y: 0.35 }
+        ];
+
+        let currentLocationIndex = 0;
+        let pulseRadius = 0;
+
+        function drawWorldMap() {
+            mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+            
+            // Draw continents outline (simplified world map)
+            mapCtx.strokeStyle = 'rgba(44, 255, 5, 0.15)';
+            mapCtx.lineWidth = 2;
+            mapCtx.fillStyle = 'rgba(44, 255, 5, 0.03)';
+            
+            // North America
+            mapCtx.beginPath();
+            mapCtx.moveTo(mapCanvas.width * 0.15, mapCanvas.height * 0.25);
+            mapCtx.lineTo(mapCanvas.width * 0.12, mapCanvas.height * 0.35);
+            mapCtx.lineTo(mapCanvas.width * 0.18, mapCanvas.height * 0.45);
+            mapCtx.lineTo(mapCanvas.width * 0.22, mapCanvas.height * 0.50);
+            mapCtx.lineTo(mapCanvas.width * 0.28, mapCanvas.height * 0.48);
+            mapCtx.lineTo(mapCanvas.width * 0.30, mapCanvas.height * 0.40);
+            mapCtx.lineTo(mapCanvas.width * 0.28, mapCanvas.height * 0.30);
+            mapCtx.lineTo(mapCanvas.width * 0.22, mapCanvas.height * 0.22);
+            mapCtx.closePath();
+            mapCtx.fill();
+            mapCtx.stroke();
+            
+            // South America
+            mapCtx.beginPath();
+            mapCtx.moveTo(mapCanvas.width * 0.26, mapCanvas.height * 0.52);
+            mapCtx.lineTo(mapCanvas.width * 0.28, mapCanvas.height * 0.58);
+            mapCtx.lineTo(mapCanvas.width * 0.30, mapCanvas.height * 0.70);
+            mapCtx.lineTo(mapCanvas.width * 0.28, mapCanvas.height * 0.78);
+            mapCtx.lineTo(mapCanvas.width * 0.24, mapCanvas.height * 0.75);
+            mapCtx.lineTo(mapCanvas.width * 0.22, mapCanvas.height * 0.65);
+            mapCtx.lineTo(mapCanvas.width * 0.23, mapCanvas.height * 0.55);
+            mapCtx.closePath();
+            mapCtx.fill();
+            mapCtx.stroke();
+            
+            // Europe
+            mapCtx.beginPath();
+            mapCtx.moveTo(mapCanvas.width * 0.45, mapCanvas.height * 0.25);
+            mapCtx.lineTo(mapCanvas.width * 0.48, mapCanvas.height * 0.28);
+            mapCtx.lineTo(mapCanvas.width * 0.52, mapCanvas.height * 0.30);
+            mapCtx.lineTo(mapCanvas.width * 0.55, mapCanvas.height * 0.32);
+            mapCtx.lineTo(mapCanvas.width * 0.54, mapCanvas.height * 0.36);
+            mapCtx.lineTo(mapCanvas.width * 0.50, mapCanvas.height * 0.38);
+            mapCtx.lineTo(mapCanvas.width * 0.46, mapCanvas.height * 0.35);
+            mapCtx.closePath();
+            mapCtx.fill();
+            mapCtx.stroke();
+            
+            // Africa
+            mapCtx.beginPath();
+            mapCtx.moveTo(mapCanvas.width * 0.48, mapCanvas.height * 0.38);
+            mapCtx.lineTo(mapCanvas.width * 0.50, mapCanvas.height * 0.42);
+            mapCtx.lineTo(mapCanvas.width * 0.52, mapCanvas.height * 0.48);
+            mapCtx.lineTo(mapCanvas.width * 0.54, mapCanvas.height * 0.55);
+            mapCtx.lineTo(mapCanvas.width * 0.55, mapCanvas.height * 0.65);
+            mapCtx.lineTo(mapCanvas.width * 0.52, mapCanvas.height * 0.70);
+            mapCtx.lineTo(mapCanvas.width * 0.48, mapCanvas.height * 0.68);
+            mapCtx.lineTo(mapCanvas.width * 0.46, mapCanvas.height * 0.60);
+            mapCtx.lineTo(mapCanvas.width * 0.45, mapCanvas.height * 0.48);
+            mapCtx.closePath();
+            mapCtx.fill();
+            mapCtx.stroke();
+            
+            // Asia
+            mapCtx.beginPath();
+            mapCtx.moveTo(mapCanvas.width * 0.56, mapCanvas.height * 0.22);
+            mapCtx.lineTo(mapCanvas.width * 0.62, mapCanvas.height * 0.25);
+            mapCtx.lineTo(mapCanvas.width * 0.70, mapCanvas.height * 0.28);
+            mapCtx.lineTo(mapCanvas.width * 0.78, mapCanvas.height * 0.30);
+            mapCtx.lineTo(mapCanvas.width * 0.82, mapCanvas.height * 0.35);
+            mapCtx.lineTo(mapCanvas.width * 0.80, mapCanvas.height * 0.42);
+            mapCtx.lineTo(mapCanvas.width * 0.75, mapCanvas.height * 0.48);
+            mapCtx.lineTo(mapCanvas.width * 0.68, mapCanvas.height * 0.50);
+            mapCtx.lineTo(mapCanvas.width * 0.62, mapCanvas.height * 0.48);
+            mapCtx.lineTo(mapCanvas.width * 0.58, mapCanvas.height * 0.42);
+            mapCtx.lineTo(mapCanvas.width * 0.56, mapCanvas.height * 0.32);
+            mapCtx.closePath();
+            mapCtx.fill();
+            mapCtx.stroke();
+            
+            // Australia
+            mapCtx.beginPath();
+            mapCtx.moveTo(mapCanvas.width * 0.78, mapCanvas.height * 0.68);
+            mapCtx.lineTo(mapCanvas.width * 0.82, mapCanvas.height * 0.70);
+            mapCtx.lineTo(mapCanvas.width * 0.88, mapCanvas.height * 0.72);
+            mapCtx.lineTo(mapCanvas.width * 0.90, mapCanvas.height * 0.76);
+            mapCtx.lineTo(mapCanvas.width * 0.88, mapCanvas.height * 0.80);
+            mapCtx.lineTo(mapCanvas.width * 0.82, mapCanvas.height * 0.78);
+            mapCtx.lineTo(mapCanvas.width * 0.78, mapCanvas.height * 0.74);
+            mapCtx.closePath();
+            mapCtx.fill();
+            mapCtx.stroke();
+            
+            // Draw grid lines on top
+            mapCtx.strokeStyle = 'rgba(44, 255, 5, 0.08)';
+            mapCtx.lineWidth = 1;
+            
+            // Vertical lines
+            for (let i = 0; i < 20; i++) {
+                mapCtx.beginPath();
+                mapCtx.moveTo((mapCanvas.width / 20) * i, 0);
+                mapCtx.lineTo((mapCanvas.width / 20) * i, mapCanvas.height);
+                mapCtx.stroke();
+            }
+            
+            // Horizontal lines
+            for (let i = 0; i < 12; i++) {
+                mapCtx.beginPath();
+                mapCtx.moveTo(0, (mapCanvas.height / 12) * i);
+                mapCtx.lineTo(mapCanvas.width, (mapCanvas.height / 12) * i);
+                mapCtx.stroke();
+            }
+
+            // Draw all location dots
+            locations.forEach((loc, index) => {
+                const x = loc.x * mapCanvas.width;
+                const y = loc.y * mapCanvas.height;
+                
+                mapCtx.fillStyle = index === currentLocationIndex ? '#2CFF05' : 'rgba(44, 255, 5, 0.3)';
+                mapCtx.beginPath();
+                mapCtx.arc(x, y, 4, 0, Math.PI * 2);
+                mapCtx.fill();
+            });
+
+            // Draw pulsing circle on current location
+            const currentLoc = locations[currentLocationIndex];
+            const x = currentLoc.x * mapCanvas.width;
+            const y = currentLoc.y * mapCanvas.height;
+            
+            mapCtx.strokeStyle = `rgba(44, 255, 5, ${1 - pulseRadius / 60})`;
+            mapCtx.lineWidth = 2;
+            mapCtx.beginPath();
+            mapCtx.arc(x, y, pulseRadius, 0, Math.PI * 2);
+            mapCtx.stroke();
+            
+            // Draw location name
+            mapCtx.fillStyle = '#2CFF05';
+            mapCtx.font = '14px Courier New';
+            mapCtx.fillText(currentLoc.name, x + 10, y - 10);
+            
+            pulseRadius += 0.3;
+            if (pulseRadius > 60) {
+                pulseRadius = 0;
+                currentLocationIndex = (currentLocationIndex + 1) % locations.length;
+            }
+        }
+
+        setInterval(drawWorldMap, 40);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            mapCanvas.width = window.innerWidth;
+            mapCanvas.height = window.innerHeight;
+        });
+
+        // Application state
+        let currentUser = null;
+        let isAdmin = false;
+        const ADMIN_USER = 'RV';
+        const ADMIN_PASS = '2218';
+
+        // Initialize data structures in memory
+        let users = { [ADMIN_USER]: { password: ADMIN_PASS, approved: true, isAdmin: true } };
+        let pendingUsers = {};
+        let messages = [];
+
+        function login() {
+            const username = document.getElementById('username').value.trim().toUpperCase();
+            const password = document.getElementById('password').value;
+            const msgEl = document.getElementById('login-message');
+
+            if (!username || !password) {
+                msgEl.innerHTML = '<p class="error">Please enter username and password</p>';
+                return;
+            }
+
+            // Admin login
+            if (username === ADMIN_USER && password === ADMIN_PASS) {
+                currentUser = username;
+                isAdmin = true;
+                showChatInterface();
+                return;
+            }
+
+            // Existing approved user
+            if (users[username] && users[username].password === password && users[username].approved) {
+                currentUser = username;
+                isAdmin = false;
+                showChatInterface();
+                return;
+            }
+
+            // New user registration
+            if (!users[username] && !pendingUsers[username]) {
+                pendingUsers[username] = { password: password, timestamp: Date.now() };
+                msgEl.innerHTML = '<p class="success">Registration submitted! Waiting for admin approval...</p>';
+                return;
+            }
+
+            // Pending approval
+            if (pendingUsers[username]) {
+                msgEl.innerHTML = '<p class="success">Your account is pending admin approval...</p>';
+                return;
+            }
+
+            msgEl.innerHTML = '<p class="error">Invalid credentials</p>';
+        }
+
+        function showChatInterface() {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('chat-section').classList.remove('hidden');
+            document.getElementById('current-user').textContent = currentUser;
+
+            if (isAdmin) {
+                document.getElementById('admin-section').classList.remove('hidden');
+                updatePendingUsers();
+            }
+
+            loadMessages();
+            setInterval(loadMessages, 2000);
+            if (isAdmin) {
+                setInterval(updatePendingUsers, 2000);
+                setInterval(updateActiveMembers, 2000);
+            }
+        }
+
+        function updatePendingUsers() {
+            const container = document.getElementById('pending-users');
+            
+            if (Object.keys(pendingUsers).length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #0ff;">No pending verifications</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            for (const [username, data] of Object.entries(pendingUsers)) {
+                const div = document.createElement('div');
+                div.className = 'pending-user';
+                div.innerHTML = `
+                    <span>User: <strong>${username}</strong></span>
+                    <div class="pending-actions">
+                        <button class="approve-btn" onclick="approveUser('${username}')">APPROVE</button>
+                        <button class="reject-btn" onclick="rejectUser('${username}')">REJECT</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function approveUser(username) {
+            const userData = pendingUsers[username];
+            users[username] = { password: userData.password, approved: true, isAdmin: false };
+            delete pendingUsers[username];
+            
+            messages.push({
+                user: 'SYSTEM',
+                text: `${username} has joined the chat`,
+                timestamp: Date.now(),
+                isSystem: true
+            });
+            
+            updatePendingUsers();
+            loadMessages();
+        }
+
+        function rejectUser(username) {
+            delete pendingUsers[username];
+            updatePendingUsers();
+        }
+
+        function updateActiveMembers() {
+            const container = document.getElementById('active-members');
+            const activeUsers = Object.keys(users).filter(u => users[u].approved && u !== ADMIN_USER);
+            
+            if (activeUsers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #0ff;">No active members</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            activeUsers.forEach(username => {
+                const div = document.createElement('div');
+                div.className = 'member-item';
+                div.innerHTML = `
+                    <span>Member: <strong>${username}</strong></span>
+                    <button class="remove-btn" onclick="removeMember('${username}')">REMOVE</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function removeMember(username) {
+            if (confirm(`Are you sure you want to remove ${username}?`)) {
+                delete users[username];
+                
+                messages.push({
+                    user: 'SYSTEM',
+                    text: `${username} has been removed from the chat`,
+                    timestamp: Date.now(),
+                    isSystem: true
+                });
+                
+                updateActiveMembers();
+                loadMessages();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            messages.push({
+                user: currentUser,
+                text: text,
+                timestamp: Date.now(),
+                isAdmin: isAdmin
+            });
+
+            input.value = '';
+            loadMessages();
+        }
+
+        function loadMessages() {
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+
+            messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `message ${msg.isAdmin ? 'admin' : ''}`;
+                
+                const userLabel = msg.isSystem ? 'SYSTEM' : (msg.isAdmin ? `${msg.user} [ADMIN]` : msg.user);
+                
+                div.innerHTML = `
+                    <div class="message-user">${userLabel}</div>
+                    <div class="message-text">${msg.text}</div>
+                `;
+                container.appendChild(div);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function logout() {
+            currentUser = null;
+            isAdmin = false;
+            document.getElementById('login-page').classList.remove('hidden');
+            document.getElementById('chat-section').classList.add('hidden');
+            document.getElementById('admin-section').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('login-message').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
